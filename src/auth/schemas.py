@@ -1,6 +1,10 @@
 from pydantic import BaseModel, Field
 from datetime import datetime, date
 import uuid
+from typing import List
+
+
+from src.books.models import Book
 
 
 class UserCreateModel(BaseModel):
@@ -11,7 +15,7 @@ class UserCreateModel(BaseModel):
     last_name: str
 
 
-class UserModel(BaseModel):
+class UserModel(BaseModel):  # When we Sign-up (we wont have any books)
     uid: uuid.UUID
     username: str
     email: str
@@ -21,6 +25,10 @@ class UserModel(BaseModel):
     password_hash: str = Field(exclude=True)
     created_at: datetime
     updated_at: datetime
+
+
+class UserBookModel(UserModel):
+    books: List[Book]
 
 
 class UserLoginModel(BaseModel):

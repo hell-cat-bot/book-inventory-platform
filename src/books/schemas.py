@@ -3,8 +3,11 @@ from typing import Optional
 import uuid
 from datetime import datetime, date
 
+from src.auth.models import User
+
 class BookSchema(BaseModel):
     uid: uuid.UUID
+    user_uid: Optional[uuid.UUID]
     title: str
     author: str
     genre: str
@@ -13,6 +16,7 @@ class BookSchema(BaseModel):
     pagecount: int
     created_at: datetime
     updated_at: datetime
+    user: Optional[User] = None
 
 
 class BookCreateModel(BaseModel):
