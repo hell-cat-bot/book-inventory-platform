@@ -8,32 +8,61 @@ from src.books.schemas import BookSchema, BookUpdate, BookCreateModel
 from src.db.main import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from src.books.service import BookService
-from src.auth.dependencies import AccessTokenBearer
+from src.auth.dependencies import AccessTokenBearer, RoleChecker
+
+
 
 
 api_router = APIRouter()
+
 book_service = BookService()
+
 access_token_bearer = AccessTokenBearer()
 
+role_checker = Depends(
+    RoleChecker(["admin", "user"])
+)
 
-@api_router.get("/", response_model=List[BookSchema])
+
+
+
+@api_router.get("/", response_model=List[BookSchema], dependencies=[role_checker])
 async def get_all_books(
     session: AsyncSession = Depends(get_session),
-    user_data=Depends(access_token_bearer),  # Credential
+    user_data: dict = Depends(access_token_bearer),  # Credential
 ):
 
     books = await book_service.get_all_books(session)
     return books
 
 
-@api_router.post("/", status_code=status.HTTP_201_CREATED, response_model=BookSchema)
+
+@api_router.get("/user/{user_uid}", response_model=List[BookSchema], dependencies=[role_checker])
+async def get_user_book_submissions(
+    user_uid: str,
+    session: AsyncSession = Depends(get_session),
+    user_data: dict = Depends(access_token_bearer)
+):
+
+    books = await book_service.get_user_books(user_uid, session)
+    return books
+
+
+
+
+@api_router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=BookSchema,
+    dependencies=[role_checker],
+)
 async def create_a_book(
     book_data: BookCreateModel,
     session: AsyncSession = Depends(get_session),
-    user_data=Depends(access_token_bearer),
+    user_data: dict = Depends(access_token_bearer),
 ):
-
-    new_book = await book_service.create_book(book_data, session)
+    user_uid = user_data.get('user')['user_uid']
+    new_book = await book_service.create_book(book_data,user_uid, session)
     return new_book
 
 
@@ -43,11 +72,11 @@ so using "book_uid: uuid.UUID" is better as if any garbage comes FastAPI throws 
 """
 
 
-@api_router.get("/{book_uid}", response_model=BookSchema)
+@api_router.get("/{book_uid}", response_model=BookSchema, dependencies=[role_checker])
 async def get_book(
     book_uid: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-    user_data=Depends(access_token_bearer),
+    user_data: dict =Depends(access_token_bearer),
 ):
 
     book = await book_service.get_book(book_uid, session)
@@ -60,12 +89,12 @@ async def get_book(
         )
 
 
-@api_router.patch("/{book_uid}", response_model=BookSchema)
+@api_router.patch("/{book_uid}", response_model=BookSchema, dependencies=[role_checker])
 async def update_book(
     book_uid: uuid.UUID,
     book_update_data: BookUpdate,
     session: AsyncSession = Depends(get_session),
-    user_data=Depends(access_token_bearer),
+    user_data:dict = Depends(access_token_bearer),
 ):
 
     updated_book = await book_service.update_book(book_uid, book_update_data, session)
@@ -78,17 +107,17 @@ async def update_book(
         )
 
 
-@api_router.delete("/{book_uid}")
+@api_router.delete("/{book_uid}", dependencies=[role_checker])
 async def delete_book(
     book_uid: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-    user_data=Depends(access_token_bearer),
+    user_data:dict = Depends(access_token_bearer),
 ):
 
     book_to_delete = await book_service.delete_book(book_uid, session)
 
     if book_to_delete is not None:  # if book: -> 'False' ,so, else: will trigger
-        return None                                                                                             # Returning 'None' here / handle it 
+        return None  # Returning 'None' here / handle it
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"

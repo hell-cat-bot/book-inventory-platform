@@ -4,16 +4,22 @@ from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import timedelta, datetime
 
-from .schemas import UserCreateModel, UserModel, UserLoginModel
+from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBookModel
 from .services import UserService
 from src.db.main import get_session
 from .utils import create_access_token, decode_token, verify_passwd
-from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
+from .dependencies import (
+    RefreshTokenBearer,
+    AccessTokenBearer,
+    get_current_user,
+    RoleChecker,
+)
 from src.db.redis import add_jti_to_blocklist
+
 
 auth_router = APIRouter()
 user_service = UserService()
-role_checker = RoleChecker(['admin'])
+role_checker = RoleChecker(["admin", "user"])
 
 REFRESH_TOKEN_EXPIRY = 2
 
@@ -59,15 +65,16 @@ async def login_user(
         if password_valid:
             # Create an Access token
             access_token = create_access_token(
-                user_data={"email": user.email, "user_uid": str(user.uid), "role" : user.role}
+                user_data={
+                    "email": user.email,
+                    "user_uid": str(user.uid),
+                    "role": user.role,
+                }
             )
 
             # Create a Refresh token
             refresh_token = create_access_token(
-                user_data={
-                    "email": user.email,
-                    "user_uid": str(user.uid)
-                },
+                user_data={"email": user.email, "user_uid": str(user.uid)},
                 refresh=True,
                 expiry=timedelta(days=REFRESH_TOKEN_EXPIRY),
             )
@@ -78,7 +85,10 @@ async def login_user(
                     "message": "Login Successful",
                     "access_token": access_token,
                     "refresh_token": refresh_token,
-                    "user": {"email": user.email, "uid": str(user.uid)},                 # didnt add role = user.role here
+                    "user": {
+                        "email": user.email,
+                        "user_uid": str(user.uid),
+                    },  # didnt add role = user.role here
                 }
             )
 
@@ -104,8 +114,10 @@ async def get_new_access_token(token_data: dict = Depends(RefreshTokenBearer()))
 
 
 # To show user their details
-@auth_router.get("/me")
-async def get_current_user(user=Depends(get_current_user), _: bool = Depends(role_checker)):        # protected only for "admin"
+@auth_router.get("/me", response_model=UserBookModel)
+async def get_current_user(
+    user=Depends(get_current_user), _: bool = Depends(role_checker)
+):
     return user
 
 
