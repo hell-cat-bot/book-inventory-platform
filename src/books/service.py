@@ -4,7 +4,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .schemas import BookCreateModel, BookUpdate
 from sqlmodel import select, desc
-from .models import Book
+from src.db.models import Book
 import uuid
 
 

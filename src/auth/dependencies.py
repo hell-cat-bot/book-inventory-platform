@@ -2,15 +2,14 @@ from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
 from fastapi.exceptions import HTTPException
 from fastapi import Request, status, Depends
-from sqlmodel import select
 from typing import List, Any
 
-from .models import User
+from src.db.models import User
 from .utils import decode_token
 from src.db.redis import jti_in_blocklist
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.auth.services import UserService
+from src.auth.service import UserService
 
 user_service = UserService()
 

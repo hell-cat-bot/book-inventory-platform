@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import uuid
 from datetime import datetime, date
 
-from src.auth.models import User
+from src.auth.schemas import UserModel
+from src.reviews.schemas import ReviewModel
 
 class BookSchema(BaseModel):
     uid: uuid.UUID
@@ -16,7 +17,11 @@ class BookSchema(BaseModel):
     pagecount: int
     created_at: datetime
     updated_at: datetime
-    user: Optional[User] = None
+
+class BookDetailedSchema(BookSchema):
+    user: Optional[UserModel] = None
+    reviews: List[ReviewModel]
+
 
 
 class BookCreateModel(BaseModel):
