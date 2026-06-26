@@ -4,7 +4,7 @@ from typing import List
 import uuid
 
 
-from src.books.schemas import BookSchema, BookUpdate, BookCreateModel
+from src.books.schemas import BookSchema, BookUpdate, BookCreateModel,BookDetailedSchema
 from src.db.main import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from src.books.service import BookService
@@ -43,8 +43,8 @@ async def get_user_book_submissions(
     session: AsyncSession = Depends(get_session),
     user_data: dict = Depends(access_token_bearer)
 ):
-
     books = await book_service.get_user_books(user_uid, session)
+    
     return books
 
 
@@ -72,7 +72,7 @@ so using "book_uid: uuid.UUID" is better as if any garbage comes FastAPI throws 
 """
 
 
-@api_router.get("/{book_uid}", response_model=BookSchema, dependencies=[role_checker])
+@api_router.get("/{book_uid}", response_model=BookDetailedSchema, dependencies=[role_checker])
 async def get_book(
     book_uid: uuid.UUID,
     session: AsyncSession = Depends(get_session),

@@ -5,7 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import timedelta, datetime
 
 from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBookModel
-from .services import UserService
+from .service import UserService
 from src.db.main import get_session
 from .utils import create_access_token, decode_token, verify_passwd
 from .dependencies import (
