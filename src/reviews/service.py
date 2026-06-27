@@ -1,5 +1,6 @@
 from .schemas import ReviewCreateModel
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
 from fastapi.exceptions import HTTPException
 from src.db.models import Review
 from src.auth.service import UserService
@@ -14,6 +15,8 @@ book_service = BookService()
 
 
 class ReviewService:
+    
+    # Add Review
     async def add_book_review(
         self,
         book_uid: uuid.UUID,
@@ -49,4 +52,51 @@ class ReviewService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Opps... Something went wrong"
             )
+    
+
+    # Get Review
+    async def get_review(self, review_uid: uuid.UUID, session: AsyncSession):
+        statement = select(Review).where(Review.uid == review_uid)
+
+        review_data = await session.exec(statement)
+
+        return review_data.first()
+
+    
+    # Get all review
+    async def get_all_reviews(self, session: AsyncSession):
+        statement = select(Review)
+
+        reviews = await session.exec(statement)
+
+        return reviews.all()
+
+    
+    # Delete review
+    async def delete_review_from_book(
+        self,
+        review_uid: uuid.UUID,
+        user: User,
+        session: AsyncSession
+    ):
+        review = await self.get_review(review_uid=review_uid , session= session)
+
+        if not review:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail="Review not found"
+            )
+        
+        if not review.user_uid == user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to delete this comment"
+            )
+        
+        await session.delete(review)
+
+        await session.commit()
+
+        return None
+
         

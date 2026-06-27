@@ -79,6 +79,12 @@ async def get_current_user(
 
     user = await user_service.get_user_by_email(user_email, session)
 
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
     return user
 
 
@@ -87,10 +93,11 @@ class RoleChecker:
 
         self.allowed_roles = allowed_roles
 
-    async def __call__(self, current_user: User = Depends(get_current_user)) -> Any:
+    async def __call__(self, current_user: User = Depends(get_current_user)) -> User:
 
+        # returning "User" here cuz 'get_current_user' already already calls dependency "AccessTokenBearer()" which checks for access token
         if current_user.role in self.allowed_roles:
-            return True
+            return current_user                                                           
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
